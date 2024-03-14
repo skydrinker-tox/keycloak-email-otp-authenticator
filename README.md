@@ -33,7 +33,9 @@ This SPI uses the standard Keycloak login theme to display the OTP form, and has
 
 If you're not using any custom theme for Keycloak, configure your realm (or specific client) to use the `email-2fa-theme` as email theme (no mail with be send if you don't)
 
-If you already have your own custom theme for emails, just add the `code-email.ftl` to your html and text templates in the email folder of your theme. The original FTL can be found in the jar file of this SPI, or inside [./src/main/resources](./src/main/resources)
+If you already have your own custom theme you can: 
+- override the OTP form page by adding the `email-code-form.ftl` to your `custom-theme/login` directory. You can retrieve this ftl file [here in the sources](./src/main/resources/theme-resources/templates/email-code-form.ftl) or extract it from the keycloak-email-otp-authenticator jar file. For localization, see the available messages properties [here](./src/main/resources/theme-resources/messages/) and override the values in your own `messages_<lang>.properties` file(s).
+- override the default email template by adding the `code-email.ftl` to the html and text templates in your own `custom-theme/email` folder. The original FTLs can be found in the jar file of this SPI, or [here in the sources](./src/main/resources/theme/email-otp-theme/email). Like the OTP form page, you can see available messages properties for localization [here](./src/main/resources/theme/email-otp-theme/email/messages/) and override the values in your own `messages_<lang>.properties` file(s).
 
 Here is the simplified structure of the directories for both login and email theme :
 
