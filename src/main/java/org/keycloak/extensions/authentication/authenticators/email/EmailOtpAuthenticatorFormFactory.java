@@ -55,15 +55,20 @@ public class EmailOtpAuthenticatorFormFactory implements AuthenticatorFactory {
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return List.of(
-                new ProviderConfigProperty(EmailOtpConstants.CODE_LENGTH, "Code length",
-                        "The number of digits of the generated code.",
-                        ProviderConfigProperty.STRING_TYPE, String.valueOf(EmailOtpConstants.DEFAULT_LENGTH)),
-                new ProviderConfigProperty(EmailOtpConstants.CODE_TTL, "Time-to-live",
-                        "The time to live in seconds for the code to be valid.", ProviderConfigProperty.STRING_TYPE,
-                        String.valueOf(EmailOtpConstants.DEFAULT_TTL)),
-                new ProviderConfigProperty(EmailOtpConstants.RESEND_WAIT_DELAY, "Min delay between resends",
-                        "The minimum delay in seconds before user can ask for a code resend", ProviderConfigProperty.STRING_TYPE,
-                        String.valueOf(EmailOtpConstants.DEFAULT_RESEND_WAIT_DELAY)));
+            new ProviderConfigProperty(EmailOtpConstants.CODE_LENGTH, "Code length",
+                    "The number of digits of the generated code.",
+                    ProviderConfigProperty.STRING_TYPE, String.valueOf(EmailOtpConstants.DEFAULT_LENGTH)),
+            new ProviderConfigProperty(EmailOtpConstants.CODE_TTL, "Time-to-live",
+                    "The time to live in seconds for the code to be valid.", ProviderConfigProperty.STRING_TYPE,
+                    String.valueOf(EmailOtpConstants.DEFAULT_TTL)),
+            new ProviderConfigProperty(EmailOtpConstants.RESEND_WAIT_DELAY, "Min delay between resends",
+                    "The minimum delay in seconds before user can ask for a code resend", ProviderConfigProperty.STRING_TYPE,
+                    String.valueOf(EmailOtpConstants.DEFAULT_RESEND_WAIT_DELAY)),
+            new ProviderConfigProperty(EmailOtpConstants.HARDCODED_OTP, "Hardcoded OTP (dev only)",
+                    "Hardcoded OTP value to use instead of generating a random code", ProviderConfigProperty.STRING_TYPE, null),
+            new ProviderConfigProperty(EmailOtpConstants.DISABLE_MAILING, "Disable mailing (dev only)",
+                    "Output the OTP code to logs instead of sending it by email", ProviderConfigProperty.BOOLEAN_TYPE, EmailOtpConstants.DEFAULT_DISABLE_MAILING)
+        );
     }
 
     @Override

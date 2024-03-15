@@ -39,7 +39,10 @@ public class EmailOtpAuthenticatorForm extends AbstractUsernameFormAuthenticator
 
     @Override
     protected Response challenge(AuthenticationFlowContext context, String error, String field) {
-        generateAndSendEmailCode(context);
+        AuthenticationSessionModel session = context.getAuthenticationSession();
+        if (session.getAuthNote(EmailOtpConstants.CODE) == null) {
+            this.generateAndSendOtp(context);
+        }
 
         LoginFormsProvider form = context.form().setExecution(context.getExecution().getId());
         if (error != null) {
@@ -49,33 +52,44 @@ public class EmailOtpAuthenticatorForm extends AbstractUsernameFormAuthenticator
                 form.setError(error);
             }
         }
+
         Response response = form.createForm("email-code-form.ftl");
         context.challenge(response);
         return response;
     }
 
-    private void generateAndSendEmailCode(AuthenticationFlowContext context) {
+    private void generateAndSendOtp(AuthenticationFlowContext context) {
         AuthenticatorConfigModel config = context.getAuthenticatorConfig();
         AuthenticationSessionModel session = context.getAuthenticationSession();
 
-        if (session.getAuthNote(EmailOtpConstants.CODE) != null) {
-            // skip sending email code
-            return;
-        }
-
-        int length = EmailOtpConstants.DEFAULT_LENGTH;
         int ttl = EmailOtpConstants.DEFAULT_TTL;
+        boolean disableMailing = EmailOtpConstants.DEFAULT_DISABLE_MAILING;
         if (config != null) {
-            // get config values
-            length = Integer.parseInt(config.getConfig().get(EmailOtpConstants.CODE_LENGTH));
             ttl = Integer.parseInt(config.getConfig().get(EmailOtpConstants.CODE_TTL));
+            disableMailing = Boolean.parseBoolean(config.getConfig().get(EmailOtpConstants.DISABLE_MAILING));
         }
 
-        String code = SecretGenerator.getInstance().randomString(length, SecretGenerator.DIGITS);
-        sendEmailWithCode(context.getRealm(), context.getUser(), code, ttl);
+        String code = this.generateOtp(context);
+        this.sendOtp(context.getRealm(), context.getUser(), code, ttl, disableMailing);
         session.setAuthNote(EmailOtpConstants.CODE, code);
         session.setAuthNote(EmailOtpConstants.CODE_TTL, Long.toString(System.currentTimeMillis() + (ttl * 1000L)));
         session.setAuthNote(EmailOtpConstants.PREVIOUS_SENT_TIME, Long.toString(System.currentTimeMillis()));
+    }
+
+    private String generateOtp(AuthenticationFlowContext context) {
+        AuthenticatorConfigModel config = context.getAuthenticatorConfig();
+        int otpLength;
+        if (config != null) {
+            // return hardcoded OTP if set in config
+            String hardcodedOtp = config.getConfig().get(EmailOtpConstants.HARDCODED_OTP);
+            if (hardcodedOtp != null && !hardcodedOtp.isEmpty() && !hardcodedOtp.isBlank()) {
+                return hardcodedOtp;
+            }
+            otpLength = Integer.parseInt(config.getConfig().get(EmailOtpConstants.CODE_LENGTH));
+        } else {
+            otpLength = EmailOtpConstants.DEFAULT_LENGTH;
+        }
+        return SecretGenerator.getInstance().randomString(otpLength, SecretGenerator.DIGITS);
     }
 
     @Override
@@ -178,7 +192,12 @@ public class EmailOtpAuthenticatorForm extends AbstractUsernameFormAuthenticator
         // NOOP
     }
 
-    private void sendEmailWithCode(RealmModel realm, UserModel user, String code, int ttl) {
+    private void sendOtp(RealmModel realm, UserModel user, String code, int ttl, boolean disableMailing) {
+        if (disableMailing) {
+            logger.warnv("DO NOT USE IN PRODUCTION - Generated OTP for user {0} ({1}): {2}", user.getUsername(), user.getEmail(), code);
+            return;
+        }
+
         if (user.getEmail() == null) {
             logger.warnf("Could not send access code email due to missing email. realm=%s user=%s", realm.getId(), user.getUsername());
             throw new AuthenticationFlowException(AuthenticationFlowError.INVALID_USER, "detail event", "userErrorMessage");
